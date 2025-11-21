@@ -1,0 +1,1 @@
+Seminkalkulator for sau
