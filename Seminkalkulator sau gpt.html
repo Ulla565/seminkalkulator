@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brunstkalkulator</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background: #f5f5f5;
+    }
+    .container {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        max-width: 500px;
+        margin: auto;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+        text-align: center;
+    }
+    label {
+        font-weight: bold;
+        margin-top: 10px;
+        display: block;
+    }
+    input, select, button {
+        width: 100%;
+        padding: 12px;
+        margin-top: 5px;
+        margin-bottom: 15px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        font-size: 16px;
+    }
+    button {
+        background-color: #3da56f;
+        color: white;
+        border: none;
+        font-size: 18px;
+    }
+    button:active {
+        background-color: #2e8155;
+    }
+    #resultat {
+        background: #e8ffe8;
+        padding: 15px;
+        border-radius: 6px;
+        font-size: 20px;
+        font-weight: bold;
+        text-align: center;
+        display: none;
+        margin-top: 20px;
+    }
+</style>
+</head>
+
+<body>
+<div class="container">
+    <h2>Brunstkalkulator</h2>
+
+    <label>Ikke brunst kl</label>
+    <input type="time" id="ikkeBrunst">
+
+    <label>Brunst oppdaget kl</label>
+    <input type="time" id="brunstOppdaget">
+
+    <label>Velg dyregruppe</label>
+    <select id="gruppe">
+        <option value="18">Påsett (18 timer)</option>
+        <option value="21">Gimre (21 timer)</option>
+        <option value="24">Søye (24 timer)</option>
+    </select>
+
+    <button onclick="beregn()">Beregn tidspunkt for inseminering</button>
+
+    <div id="resultat"></div>
+
+</div>
+
+<script>
+function parseTid(t) {
+    const deler = t.split(":");
+    return parseInt(deler[0]) + parseInt(deler[1]) / 60;
+}
+
+function formatTid(t) {
+    t = ((t % 24) + 24) % 24;
+    let h = Math.floor(t);
+    let m = Math.round((t - h) * 60);
+    if (m === 60) { h++; m = 0; }
+    if (h === 24) h = 0;
+    return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m;
+}
+
+function beregn() {
+    const ikke = document.getElementById("ikkeBrunst").value;
+    const oppdaget = document.getElementById("brunstOppdaget").value;
+
+    if (!ikke || !oppdaget) {
+        alert("Du må fylle inn begge tidspunkter.");
+        return;
+    }
+
+    const timerFraBrunst = parseInt(document.getElementById("gruppe").value);
+
+    const t1 = parseTid(ikke);
+    const t2 = parseTid(oppdaget);
+
+    let brunstStart = (t2 < t1)
+        ? t1 + (24 + t2 - t1) / 2
+        : t1 + (t2 - t1) / 2;
+
+    let inseminering = brunstStart + timerFraBrunst;
+
+    document.getElementById("resultat").style.display = "block";
+    document.getElementById("resultat").innerHTML =
+        "Inseminer kl <br><span style='font-size:28px'>" + formatTid(inseminering) + "</span>";
+}
+</script>
+
+</body>
+</html>
