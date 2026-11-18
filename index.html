@@ -2,8 +2,18 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Insemineringskalkulator</title>
+
+<!-- Installerbar app (Android + iOS) -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2f7d57">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Semin">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 
 <style>
     :root {
@@ -33,6 +43,8 @@
 
     * { box-sizing: border-box; }
 
+    html { background: var(--bg); }
+
     body {
         font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
         margin: 0;
@@ -41,7 +53,10 @@
             radial-gradient(1200px 500px at 50% -150px, var(--accent-soft), transparent 70%),
             var(--bg);
         color: var(--text);
-        padding: 24px 16px 32px;
+        padding: calc(24px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom));
+        /* Vi styrer "dra ned for å oppdatere" selv, så det virker likt på Android og iOS */
+        overscroll-behavior-y: contain;
+        -webkit-tap-highlight-color: transparent;
     }
 
     .container {
@@ -188,10 +203,72 @@
         font-size: 0.85em;
         color: var(--muted);
     }
+
+    /* Dra ned for å oppdatere */
+    #ptr {
+        position: fixed;
+        top: 0;
+        left: 50%;
+        width: 44px;
+        height: 44px;
+        margin-left: -22px;
+        margin-top: calc(env(safe-area-inset-top) - 54px);
+        border-radius: 50%;
+        background: var(--card);
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+        pointer-events: none;
+        opacity: 0;
+    }
+    #ptr svg { width: 22px; height: 22px; stroke: var(--accent); fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.1s; }
+    #ptr.spinner svg { animation: snurr 0.8s linear infinite; }
+    @keyframes snurr { to { transform: rotate(360deg); } }
+
+    /* Installasjonstips */
+    #installTips {
+        display: none;
+        max-width: 480px;
+        margin: 16px auto 0;
+        padding: 14px 16px;
+        border-radius: 14px;
+        background: var(--card);
+        border: 1px solid var(--line);
+        font-size: 14px;
+        color: var(--muted);
+        line-height: 1.45;
+    }
+    #installTips strong { color: var(--text); }
+    #installTips button {
+        margin-top: 10px;
+        padding: 11px;
+        font-size: 15px;
+    }
+    #installTips .lukk {
+        display: block;
+        margin: 8px auto 0;
+        background: none;
+        border: none;
+        box-shadow: none;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 500;
+        padding: 6px;
+        width: auto;
+        text-decoration: underline;
+    }
 </style>
 </head>
 
 <body>
+
+<div id="ptr" aria-hidden="true">
+    <svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><polyline points="20 4 20 9 15 9"/></svg>
+</div>
+
 <div class="container">
 
     <div class="header">
@@ -232,6 +309,8 @@
     </div>
 
 </div>
+
+<div id="installTips"></div>
 
 <script>
 function parseTid(t) {
@@ -277,6 +356,124 @@ function beregn() {
 <footer>
   © 2025 Kalkulator laget av Johanne Ulrica Øveraasen
 </footer>
+
+<script>
+/* ---------- Service worker (offline + oppdateringer) ---------- */
+let swReg = null;
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+        navigator.serviceWorker.register("sw.js").then(function (reg) {
+            swReg = reg;
+        }).catch(function () {});
+    });
+}
+
+/* ---------- Dra ned for å oppdatere ---------- */
+(function () {
+    const ptr = document.getElementById("ptr");
+    const TERSKEL = 80;      // piksler du må dra for å utløse
+    const MAKS = 120;
+    let startY = 0, dra = false, avstand = 0, opptatt = false;
+
+    function paaToppen() {
+        return (window.scrollY || document.documentElement.scrollTop || 0) <= 0;
+    }
+    function tegn(d) {
+        const p = Math.min(d / TERSKEL, 1);
+        ptr.style.opacity = p;
+        ptr.style.transform = "translateY(" + Math.min(d, MAKS) * 0.9 + "px)";
+        ptr.firstElementChild.style.transform = "rotate(" + (d * 3) + "deg)";
+    }
+    function skjul() {
+        ptr.style.transition = "transform 0.2s, opacity 0.2s";
+        ptr.style.opacity = 0;
+        ptr.style.transform = "translateY(0)";
+        setTimeout(function () { ptr.style.transition = ""; ptr.classList.remove("spinner"); ptr.firstElementChild.style.transform = ""; }, 220);
+    }
+
+    async function oppdater() {
+        opptatt = true;
+        ptr.classList.add("spinner");
+        ptr.style.transition = "transform 0.15s";
+        ptr.style.opacity = 1;
+        ptr.style.transform = "translateY(" + (TERSKEL * 0.7) + "px)";
+        try {
+            if (swReg) { await swReg.update(); }
+            if ("caches" in window) {
+                const navn = await caches.keys();
+                await Promise.all(navn.map(function (n) { return caches.delete(n); }));
+            }
+        } catch (e) { /* ingen nett – last siden på nytt likevel */ }
+        location.reload();
+    }
+
+    document.addEventListener("touchstart", function (e) {
+        if (opptatt || e.touches.length !== 1 || !paaToppen()) return;
+        startY = e.touches[0].clientY;
+        dra = true;
+        avstand = 0;
+    }, { passive: true });
+
+    document.addEventListener("touchmove", function (e) {
+        if (!dra || opptatt) return;
+        const d = e.touches[0].clientY - startY;
+        if (d <= 0 || !paaToppen()) { avstand = 0; tegn(0); return; }
+        avstand = d * 0.5;        // litt motstand
+        tegn(avstand);
+        if (e.cancelable) e.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener("touchend", function () {
+        if (!dra || opptatt) return;
+        dra = false;
+        if (avstand >= TERSKEL * 0.75) { oppdater(); } else { skjul(); }
+        avstand = 0;
+    });
+    document.addEventListener("touchcancel", function () { dra = false; skjul(); });
+})();
+
+/* ---------- Installasjonstips ---------- */
+(function () {
+    const boks = document.getElementById("installTips");
+    const erInstallert = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+    if (erInstallert) return;
+    try { if (localStorage.getItem("skjulInstall") === "1") return; } catch (e) {}
+
+    function lukkKnapp() {
+        return "<button class='lukk' type='button' id='lukkTips'>Skjul</button>";
+    }
+    function vis(html) {
+        boks.innerHTML = html;
+        boks.style.display = "block";
+        document.getElementById("lukkTips").onclick = function () {
+            boks.style.display = "none";
+            try { localStorage.setItem("skjulInstall", "1"); } catch (e) {}
+        };
+    }
+
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+                (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+    if (ios) {
+        vis("<strong>Legg til på hjem-skjermen</strong><br>" +
+            "Trykk på Del-ikonet (firkant med pil opp) i Safari, og velg «Legg til på Hjem-skjerm»." + lukkKnapp());
+    }
+
+    // Android / Chrome
+    let utsatt = null;
+    window.addEventListener("beforeinstallprompt", function (e) {
+        e.preventDefault();
+        utsatt = e;
+        vis("<strong>Installer appen</strong><br>Få kalkulatoren som egen app på telefonen, med eget ikon.<br>" +
+            "<button type='button' id='installKnapp'>Installer</button>" + lukkKnapp());
+        document.getElementById("installKnapp").onclick = function () {
+            utsatt.prompt();
+            utsatt.userChoice.finally(function () { boks.style.display = "none"; utsatt = null; });
+        };
+    });
+    window.addEventListener("appinstalled", function () { boks.style.display = "none"; });
+})();
+</script>
 
 </body>
 </html>

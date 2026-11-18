@@ -1,0 +1,17 @@
+{
+  "name": "Insemineringskalkulator",
+  "short_name": "Semin",
+  "description": "Beregn tidspunkt for inseminering av sau etter brunststart",
+  "lang": "no",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#2f7d57",
+  "theme_color": "#2f7d57",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
