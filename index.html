@@ -6,78 +6,230 @@
 <title>Insemineringskalkulator</title>
 
 <style>
+    :root {
+        --bg: #eef3ec;
+        --card: #ffffff;
+        --text: #1f2a24;
+        --muted: #6b7a70;
+        --line: #d9e2da;
+        --accent: #2f7d57;
+        --accent-dark: #25654a;
+        --accent-soft: #e6f3ec;
+        --shadow: 0 10px 30px rgba(31, 58, 43, 0.12);
+    }
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg: #121a15;
+            --card: #1b251f;
+            --text: #e8efe9;
+            --muted: #93a59a;
+            --line: #2e3d34;
+            --accent: #4aa57a;
+            --accent-dark: #3d8a65;
+            --accent-soft: #1f3529;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+    }
+
+    * { box-sizing: border-box; }
+
     body {
-        font-family: Arial, sans-serif;
-        margin: 20px;
-        background: #f5f5f5;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+        margin: 0;
+        min-height: 100vh;
+        background:
+            radial-gradient(1200px 500px at 50% -150px, var(--accent-soft), transparent 70%),
+            var(--bg);
+        color: var(--text);
+        padding: 24px 16px 32px;
     }
+
     .container {
-        background: white;
-        padding: 20px;
-        border-radius: 12px;
-        max-width: 500px;
-        margin: auto;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        background: var(--card);
+        max-width: 480px;
+        margin: 0 auto;
+        border-radius: 20px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        border: 1px solid var(--line);
     }
+
+    .header {
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        color: #fff;
+        padding: 26px 24px 22px;
+        text-align: center;
+    }
+    .header .icon {
+        width: 52px;
+        height: 52px;
+        margin: 0 auto 10px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .header .icon svg { width: 28px; height: 28px; }
     h2 {
-        text-align: center;
+        margin: 0;
+        font-size: 24px;
+        font-weight: 700;
+        letter-spacing: 0.2px;
     }
+    .header p {
+        margin: 6px 0 0;
+        font-size: 14px;
+        opacity: 0.85;
+    }
+
+    .body { padding: 22px 24px 26px; }
+
+    .field { margin-bottom: 18px; }
+
     label {
-        font-weight: bold;
-        margin-top: 10px;
         display: block;
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--muted);
+        margin-bottom: 6px;
+        letter-spacing: 0.2px;
     }
-    input, select, button {
+
+    input, select {
         width: 100%;
-        padding: 12px;
-        margin-top: 5px;
-        margin-bottom: 15px;
-        border-radius: 6px;
-        border: 1px solid #ccc;
-        font-size: 16px;
+        padding: 13px 14px;
+        border-radius: 12px;
+        border: 1.5px solid var(--line);
+        background: var(--card);
+        color: var(--text);
+        font-size: 17px;
+        font-family: inherit;
+        transition: border-color 0.15s, box-shadow 0.15s;
+        -webkit-appearance: none;
+        appearance: none;
     }
+    select {
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'><path d='M1 1l6 6 6-6' fill='none' stroke='%236b7a70' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+        padding-right: 38px;
+    }
+    input:focus, select:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+
+    .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    @media (max-width: 380px) {
+        .row { grid-template-columns: 1fr; }
+    }
+
     button {
-        background-color: #3da56f;
-        color: white;
-        border: none;
-        font-size: 18px;
-    }
-    button:active {
-        background-color: #2e8155;
-    }
-    #resultat {
-        background: #e8ffe8;
+        width: 100%;
         padding: 15px;
-        border-radius: 6px;
-        font-size: 20px;
-        font-weight: bold;
-        text-align: center;
+        margin-top: 4px;
+        border: none;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        color: #fff;
+        font-size: 17px;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        box-shadow: 0 6px 14px rgba(47, 125, 87, 0.3);
+        transition: transform 0.1s, box-shadow 0.15s;
+    }
+    button:hover { box-shadow: 0 8px 18px rgba(47, 125, 87, 0.4); }
+    button:active {
+        transform: translateY(1px);
+        box-shadow: 0 3px 8px rgba(47, 125, 87, 0.3);
+    }
+
+    #resultat {
         display: none;
-        margin-top: 20px;
+        margin-top: 22px;
+        padding: 20px 16px;
+        border-radius: 16px;
+        background: var(--accent-soft);
+        border: 1.5px solid var(--accent);
+        text-align: center;
+        animation: pop 0.25s ease-out;
+    }
+    #resultat .label {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    #resultat .tid {
+        display: block;
+        font-size: 52px;
+        font-weight: 800;
+        line-height: 1.1;
+        margin-top: 4px;
+        color: var(--accent);
+        font-variant-numeric: tabular-nums;
+    }
+    @keyframes pop {
+        from { opacity: 0; transform: translateY(6px) scale(0.98); }
+        to   { opacity: 1; transform: none; }
+    }
+
+    footer {
+        text-align: center;
+        margin-top: 24px;
+        font-size: 0.85em;
+        color: var(--muted);
     }
 </style>
 </head>
 
 <body>
 <div class="container">
-    <h2>Insemineringskalkulator</h2>
 
-    <label>Ikke brunst kl</label>
-    <input type="time" id="ikkeBrunst">
+    <div class="header">
+        <div class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="9"/>
+                <polyline points="12 7 12 12 15.5 14"/>
+            </svg>
+        </div>
+        <h2>Insemineringskalkulator</h2>
+        <p>Finn riktig tidspunkt etter brunststart</p>
+    </div>
 
-    <label>Brunst oppdaget kl</label>
-    <input type="time" id="brunstOppdaget">
+    <div class="body">
+        <div class="row">
+            <div class="field">
+                <label for="ikkeBrunst">Ikke brunst kl</label>
+                <input type="time" id="ikkeBrunst">
+            </div>
+            <div class="field">
+                <label for="brunstOppdaget">Brunst oppdaget kl</label>
+                <input type="time" id="brunstOppdaget">
+            </div>
+        </div>
 
-    <label>Velg dyregruppe</label>
-    <select id="gruppe">
-        <option value="18">Påsett (18 timer)</option>
-        <option value="21">Gimre (21 timer)</option>
-        <option value="24">Søye (24 timer)</option>
-    </select>
+        <div class="field">
+            <label for="gruppe">Velg dyregruppe</label>
+            <select id="gruppe">
+                <option value="18">Påsett (18 timer)</option>
+                <option value="21">Gimre (21 timer)</option>
+                <option value="24">Søye (24 timer)</option>
+            </select>
+        </div>
 
-    <button onclick="beregn()">Beregn tidspunkt for inseminering</button>
+        <button onclick="beregn()">Beregn tidspunkt for inseminering</button>
 
-    <div id="resultat"></div>
+        <div id="resultat"></div>
+    </div>
 
 </div>
 
@@ -118,15 +270,13 @@ function beregn() {
 
     document.getElementById("resultat").style.display = "block";
     document.getElementById("resultat").innerHTML =
-        "Inseminer kl <br><span style='font-size:28px'>" + formatTid(inseminering) + "</span>";
+        "<div class='label'>Inseminer kl</div><span class='tid'>" + formatTid(inseminering) + "</span>";
 }
 </script>
 
-<footer style="text-align:center; margin-top:30px; font-size:0.95em; color:#888;">
+<footer>
   © 2025 Kalkulator laget av Johanne Ulrica Øveraasen
 </footer>
 
 </body>
 </html>
-
-
